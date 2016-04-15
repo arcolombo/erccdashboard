@@ -29,7 +29,7 @@ testDEArray <- function(exDat){
     y <- rbind(yERCC, yAll)
     
     #y <- yERCC
-    if(is.null(exDat$normFactor)&(exDat$sampleInfo$isNorm==TRUE)){
+    if(is.null(exDat$normFactor)|(exDat$sampleInfo$isNorm==TRUE)){
         cat("\nisNorm is TRUE, array data is already normalized\n")
         ynorm <- y
     }else{
@@ -47,7 +47,7 @@ testDEArray <- function(exDat){
     
     fit <- lmFit(ylog,design)
     
-    fit <- eBayes(fit)
+    fit <- eBayes(fit) # error is thrown from topTable if this isn't used
     
     res <- topTable(fit,sort.by="none",number = dim(ylog)[1],coef = 2)
     
