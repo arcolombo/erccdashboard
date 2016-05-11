@@ -10,11 +10,14 @@ testDEArray <- function(exDat){
     #y <- cbind(y[c(1)],normy)
     erccInfo <- exDat$erccInfo
     sampleInfo <- exDat$sampleInfo
-    row.names(y) <- y$Feature
+    row.names(y) <- make.names(y$Feature, unique=TRUE)
+    # Replace the "." in the ERCC row names with "_"
+    row.names(y) <- gsub(pattern = "ERCC.00",
+                         replacement = "ERCC-00", x = row.names(y))
     y <- y[-c(1)]
     
-    yERCC <- y[grep("ERCC-",row.names(y)),]
-    yAll <- y[-grep("ERCC-",row.names(y)),]
+    yERCC <- y[grep("ERCC-00",row.names(y)),]
+    yAll <- y[-grep("ERCC-00",row.names(y)),]
     
     # adjust for r_m before hypothesis testing
     if(!is.null(exDat$Results$r_m.res$r_m.mn)){
@@ -26,7 +29,7 @@ testDEArray <- function(exDat){
     y <- rbind(yERCC, yAll)
     
     #y <- yERCC
-    if(is.null(exDat$normFactor)&(exDat$sampleInfo$isNorm==TRUE)){
+    if(is.null(exDat$normFactor)|(exDat$sampleInfo$isNorm==TRUE)){
         cat("\nisNorm is TRUE, array data is already normalized\n")
         ynorm <- y
     }else{
@@ -44,7 +47,7 @@ testDEArray <- function(exDat){
     
     fit <- lmFit(ylog,design)
     
-    fit <- eBayes(fit)
+    fit <- eBayes(fit) # error is thrown from topTable if this isn't used
     
     res <- topTable(fit,sort.by="none",number = dim(ylog)[1],coef = 2)
     
@@ -68,8 +71,8 @@ testDEArray <- function(exDat){
     yMns <- data.frame(Feature = row.names(y), MnSignal = rowMeans(y))
     mergedRes <- merge(res,yMns,by="Feature")
     
-    ERCCres<- mergedRes[grep("ERCC-",mergedRes$Feature),]
-    Endores <- mergedRes[-grep("ERCC-",mergedRes$Feature),]
+    ERCCres<- mergedRes[grep("ERCC-00",mergedRes$Feature),]
+    Endores <- mergedRes[-grep("ERCC-00",mergedRes$Feature),]
     
     ercc.pval.res <- data.frame( Feature = ERCCres$Feature,
                                  MnSignal = ERCCres$MnSignal,

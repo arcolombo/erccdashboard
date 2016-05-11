@@ -76,7 +76,15 @@ initDat <- function(datType=NULL, isNorm=FALSE, exTable=NULL,
         stop("Need to specify sample1Name.")
     if(missing(sample2Name))
         stop("Need to specify sample2Name.")
-    
+    # warn user to fix any problematic sample names...
+    if(grepl("[^[:alnum:]]", sample1Name))
+        stop(paste("Only alphanumeric characters are allowed for sample1Name",
+             "and sample2Name\n",
+             "do not use spaces or punctuation characters.\n"))
+    if(grepl("[^[:alnum:]]", sample2Name))
+        stop(paste("Only alphanumeric characters are allowed for sample1Name",
+             "and sample2Name\n",
+             "do not use spaces or punctuation characters.\n"))
     myYLimMA <- ratioLim
     myXLimMA <- signalLim
     xlimEffects <- c(-15,15)
@@ -86,31 +94,12 @@ initDat <- function(datType=NULL, isNorm=FALSE, exTable=NULL,
     
     exDat<-NULL
     
-    #myXLimMA = c(-10,15)
-    #myYLimMA = c(-4,4)
-    #   
-    #   if ((datType == "count")|(datType == "array")){
-    #     myXLim = c(-10,15)
-    #   }else{
-    #     stop("datType is not count or array")
-    #     #need to define what x-axis will look like for FPKM
-    #     #chooseXLim <- function(){
-    #     #  cat("\nChoose X-scale, e.g. c(2,10)\n")
-    #     #  readline("Enter X-scale vector: ")
-    #     #}
-    #     #myXLim = as.numeric(chooseXLim())  
-    #   }
-    #   
-    #myYLim = myXLimMA
-    
     cat(paste("choseFDR =",choseFDR,"\n"))
     
     if(missing(userMixFile)){
         userMixFile <- NULL
     }
-    #   if((datType == "count") & (is.null(repNormFactor))){
-    #     stop("repNormFactor argument is missing!")
-    #   }
+    
     if(is.null(repNormFactor)){
         #repNormFactor <- NULL
         cat("repNormFactor is NULL \n")
@@ -142,12 +131,7 @@ initDat <- function(datType=NULL, isNorm=FALSE, exTable=NULL,
     
     exDat <- list(sampleInfo = sampleInfo,plotInfo = plotInfo)
     
-    #if (exists("filenameRoot")){
-        exDat <- dashboardFile(exDat=exDat,filenameRoot=filenameRoot)  
-    #}else{
-    #    stop("The filenameRoot character string has not been defined!")
-    #}
-    
+    exDat <- dashboardFile(exDat=exDat,filenameRoot=filenameRoot)  
     
     ############################################################################
     # Run loadERCCInfo function to obtain ERCC information
@@ -169,6 +153,23 @@ initDat <- function(datType=NULL, isNorm=FALSE, exTable=NULL,
     exDat <- prepERCCDat(exDat)
         
     exDat <- plotAdjust(exDat)
+    
+    # check for sample 1 names to be in the first set of exTable sample columns
+    sample1Name <- exDat$sampleInfo$sample1Name
+    
+    col2Sample <- grepl(sample1Name, names(exDat$Transcripts)[2])
+    
+    if(col2Sample == FALSE){
+        stop(paste("\nThe first set of columns in exTable must match",
+                   "sample1Name =",sample1Name,
+                   "\n","Please check sample and exTable names\n"))
+    }
+    
+    # check for missing 1:1 ERCCs 
+    if(!(any(exDat$erccInfo$FCcode$FC == 1))){
+        stop("1:1 controls are missing, check userMixFile")    
+    }
+    
     
     return(exDat)
     
